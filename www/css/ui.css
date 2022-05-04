@@ -1,0 +1,39 @@
+body
+{
+    background-color: #557799;
+    margin-top:20px;
+    font-family: system-ui;
+    color: white;
+    width: 1450px;
+    font-size: 16px;
+}
+
+h3
+{
+    font-size: 20px;
+    font-weight: bold;
+    margin: 0px;
+}
+
+.menu_item_active {
+    border: solid 1px;
+    width: max-content;
+    color: yellow;
+    text-align: center;
+    padding: 5 30px 5 30px;
+    margin-right: 30px;
+    display: inline;
+    user-select: none;
+}
+
+.menu_item {
+    border: solid 1px;
+    width: max-content;
+    color: white;
+    text-align: center;
+    padding: 5 30px 5 30px;
+    margin-right: 30px;
+    display: inline;
+    cursor: pointer;
+    user-select: none;
+}

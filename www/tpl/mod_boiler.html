@@ -1,0 +1,200 @@
+
+<h3>Панель управления котлом</h3>
+<table style="width: 1400px;">
+    <tr>
+        <td style="width: 25%;
+                   vertical-align: top">
+            <div style="border: solid 3px #00BFFF;
+                        margin: 10px;
+                        padding: 10px;
+                        width: fit-content;
+                        width: 320px;">
+                Статус котла:<br><br>
+                <table style="margin-left: 20px">
+                    <tr>
+                        <td style="width: 200px">Состояние:</td>
+                        <td>Ожидание</td>
+                    </tr>
+                    <tr>
+                        <td>Питание:</td>
+                        <td><div class="led-green-on"></div></td>
+                    </tr>
+                    <tr>
+                        <td>Топлиный насос:</td>
+                        <td><div class="led-red-on"></div></td>
+                    </tr>
+                    <tr>
+                        <td>Зажигание:</td>
+                        <td><div class="led-red-off"></div></td>
+                    </tr>
+                    <tr>
+                        <td>Воздух:</td>
+                        <td><div class="led-red-on"></div></td>
+                    </tr>
+                    <tr>
+                        <td>Водяной насос:</td>
+                        <td><div class="led-red-on"></div></td>
+                    </tr>
+                    <tr>
+                        <td>Калорифер:</td>
+                        <td><div class="led-red-on"></div></td>
+                    </tr>
+                    <tr>
+                        <td style="margin: 10px">Перегрев:</td>
+                        <td><div class="led-red-off"></div></td>
+                    </tr>
+                </table>
+
+                <br>
+            </div>
+        </td>
+
+        <td style="width: 25%;
+                   vertical-align: top">
+
+            <div class="seven_seg_item_big">
+                Установленная температура <br>
+                <div id="ss_target_t" class="seven_seg_big"></div>
+                <br><br>
+
+                <div style="">
+                    <a class="button_blue">5°</a>
+                    <a class="button_blue">Задать</a>
+                </div>
+            </div>
+
+
+            <div style="border: solid 3px #00BFFF;
+                        margin: 10px;
+                        padding: 10px;
+                        width: fit-content;
+                        width: 320px;">
+                Управление:<br><br>
+                <a class="button_green">Вкл. котёл</a>
+                <a class="button_blue">Вкл. отопитель</a>
+            </div>
+        </td>
+
+        <td style="width: 25%;
+                   vertical-align: top">
+            <div class="seven_seg_item">
+                Температура в помещении <br>
+                <div id="ss_room_t" class="seven_seg_3"></div>
+            </div>
+
+            <div class="seven_seg_item">
+                Температура в корпусе котла <br>
+                <div id="ss_boiler_box_t" class="seven_seg_3"></div>
+            </div>
+
+            <div class="seven_seg_item">
+                Температура теплоносителя в котле<br>
+                <div id="ss_boiler_t" class="seven_seg_3"></div>
+            </div>
+
+            <div class="seven_seg_item">
+                Температура теплоносителя на входе в котёл <br>
+                <div id="ss_return_t" class="seven_seg_3"></div>
+            </div>
+        </td>
+
+        <td style="width: 25%;
+                   vertical-align: top">
+            <div class="seven_seg_item">
+                Счётчик запусков за сутки<br>
+                <div id="ss_ignition_counter" class="seven_seg_2"></div>
+            </div>
+
+            <div class="seven_seg_item">
+                Израсходовано литров за сутки<br>
+                <div id="ss_fuel_consumption" class="seven_seg_3"></div>
+            </div>
+
+            <div class="seven_seg_item">
+                Израсходовано литров за месяц<br>
+                <div id="ss_fuel_consumption_month" class="seven_seg_4"></div>
+            </div>
+
+            <div class="seven_seg_item">
+                Израсходовано литров за год<br>
+                <div id="ss_fuel_consumption_year" class="seven_seg_4"></div>
+            </div>
+        </td>
+    </tr>
+</table>
+
+<script>
+    $("#ss_target_t").sevenSeg({
+        digits:3,
+        value: 17.5,
+        colorOff: "#003500",
+        colorOn: "lime",
+        slant: 10
+    });
+
+    $("#ss_room_t").sevenSeg({
+        digits:3,
+        value: 18.3,
+        colorOff: "#003500",
+        colorOn: "lime",
+        slant: 10
+    });
+
+    $("#ss_boiler_box_t").sevenSeg({
+        digits:3,
+        value: 19.7,
+        colorOff: "#400000",
+        colorOn: "red",
+        slant: 10
+    });
+
+    $("#ss_boiler_t").sevenSeg({
+        digits:3,
+        value: 48.7,
+        colorOff: "#400000",
+        colorOn: "red",
+        slant: 10
+    });
+
+    $("#ss_return_t").sevenSeg({
+        digits:3,
+        value: 27.1,
+        colorOff: "#400000",
+        colorOn: "red",
+        slant: 10
+    });
+
+    $("#ss_ignition_counter").sevenSeg({
+        digits:2,
+        value: " 1",
+        colorOff: "#400000",
+        colorOn: "orange",
+        slant: 10
+    });
+
+    $("#ss_fuel_consumption").sevenSeg({
+        digits:3,
+        value: "5.7",
+        colorOff: "#400000",
+        colorOn: "orange",
+        slant: 10
+    });
+
+    $("#ss_fuel_consumption_month").sevenSeg({
+        digits:4,
+        value: "72.8",
+        colorOff: "#400000",
+        colorOn: "orange",
+        slant: 10
+    });
+
+    $("#ss_fuel_consumption_year").sevenSeg({
+        digits:4,
+        value: "712",
+        colorOff: "#400000",
+        colorOn: "orange",
+        slant: 10
+    });
+
+</script>
+
