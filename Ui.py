@@ -31,6 +31,7 @@ class Ui():
     def httpUiHandler(s, args, body, attrs, conn):
         if not args or (not 'method' in args):
             return json.dumps({'status': 'error',
+                               'error_code': '8',
                                'reason': "argument 'method' is absent"})
 
         method = args['method']
@@ -38,25 +39,28 @@ class Ui():
 
 
     def httpSendEventHandler(s, args, body, attrs, conn):
-        print(body)
         try:
             dt = json.loads(body)
         except:
             return json.dumps({'status': 'error',
+                               'error_code': '7',
                                'reason': "can't parse JSON from POST request"})
 
         if not 'type' in dt:
             return json.dumps({'status': 'error',
+                               'error_code': '6',
                                'reason': "'type' field not specified in JSON"})
         evType = dt['type']
 
         if not 'sender' in dt:
             return json.dumps({'status': 'error',
+                               'error_code': '5',
                                'reason': "'sender' field not specified in JSON"})
         sender = dt['sender']
 
         if not 'data' in dt:
             return json.dumps({'status': 'error',
+                               'error_code': '4',
                                'reason': "'data' field not specified in JSON"})
         data = dt['data']
         s.eventManager.send(sender, evType, data)
@@ -66,8 +70,6 @@ class Ui():
 
     def destroy(s):
         s.httpServer.destroy()
-
-
 
 
 
@@ -132,9 +134,7 @@ class UiEventManager():
         with s.lock:
             s.awaitingTaskList.append(task)
 
-        print("call waitMessage %s" % time.time())
         task.waitMessage(60)
-        print("finished waitMessage %s" % time.time())
 
         with s.lock:
             s.awaitingTaskList.remove(task)
@@ -177,6 +177,7 @@ class HttpUiHandler():
 
         if not method in list:
             return json.dumps({'status': 'error',
+                               'error_code': '3',
                                'reason': ("method '%s' is not registred" % method)})
         return list[method](args)
 
@@ -200,15 +201,16 @@ class HttpUiHandler():
 
 
     def reqEvents(s, args):
-        print("call reqEvents")
         if not 'subscriber_id' in args:
             return json.dumps({'status': 'error',
+                               'error_code': '1',
                                'reason': "'subscriber_id' is absent"})
 
         subscriberId = args['subscriber_id']
         events = s.eventManager.events(s.httpServer.task(), subscriberId)
         if events == None:
             return json.dumps({'status': 'error',
+                               'error_code': '2',
                                'reason': ("'subscriberId' %s is not registred" % subscriberId)})
 
         return json.dumps({'status': 'ok',

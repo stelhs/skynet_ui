@@ -16,6 +16,31 @@
 
     <body onload="init()">
 
+        <div id="hidingPage"
+             style="position: absolute;
+                    top: 0px;
+                    left: 0px;
+                    width:100%;
+                    height:100%;
+                    background:#000;
+                    opacity:0.5;
+                    display: none;">
+        </div>
+
+        <div id="errorBox"
+             style="border: solid 3px red;
+                    width: max-content;
+                    position: absolute;
+                    left: 50%;
+                    top: 50%;
+                    transform: translate(-50%, -50%);
+                    background-color: #003377;
+                    padding: 30px;
+                    text-align: center;
+                    display: none">
+            <!-- message_box.html -->
+        </div>
+
         <div id="menu_panel" style="padding: 5px;">
             <!-- menu.html -->
         </div>
@@ -24,7 +49,9 @@
             <!-- modules.html -->
         </div>
 
-        <video id="no_sleep_video"></video>
+        <video id="no_sleep_video"
+               style="left: 0px;
+                      position: absolute"></video>
     </body>
 </html>
 

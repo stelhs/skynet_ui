@@ -4,12 +4,6 @@ function $$(id)
     return document.getElementById(id);
 }
 
-/*function domObjSetClass(obj, className) {
-    obj.classList.remove(className);
-    obj.classList.add(className);
-}*/
-
-
 function asyncAjaxReq(method, args = {}, successCb = NaN, errCb = NaN)
 {
     args['method'] = method;
@@ -69,22 +63,43 @@ class Ui {
         this.noSleep = new NoSleep('no_sleep_video');
         this.modules = [];
 
-        var c = syncAjaxReq('subscribe');
-        var resp = JSON.parse(c)
-        this.subscriberId = resp.subscriber_id;
+        this.errorBoxDiv = $$('errorBox');
+        this.hidingPageDiv = $$('hidingPage');
+        this.noSleep.run();
+        this.register();
         this.eventReceiver();
     }
 
+    register() {
+        var c = syncAjaxReq('subscribe');
+        var resp = JSON.parse(c)
+        this.subscriberId = resp.subscriber_id;
+    }
+
     eventHandler(sender, type, data) {
-        this.noSleep.run()
 //        alert(data.room_t);
     }
 
     eventReceiver() {
         var success = function(responceText) {
+            console.log("call success")
+            this.errorBoxHide();
             var resp = JSON.parse(responceText)
-            if (resp.status != 'ok') {
-                //TODO
+            if (resp.status == 'error') {
+                if (resp.error_code == 2) { // if not registred
+                    this.register();
+                    this.eventReceiver();
+                    return;
+                }
+
+                this.errorBoxShow('Ошибка',
+                                  'Ошибка сервера: status: ' + resp.status + '<br>' +
+                                  'Причина: ' + resp.reason);
+                var retry = function () {
+                    this.eventReceiver();
+                }
+                setTimeout(retry.bind(this), 3000);
+                return;
             }
 
             var events = resp.events;
@@ -100,8 +115,30 @@ class Ui {
             this.eventReceiver();
         }
 
-        var error = function() {
-            alert('error');
+        var error = function(jqXHR, exception) {
+            console.log("call error")
+            var reason = '';
+            if (jqXHR.status === 0) {
+                reason = 'Not connect.\n Verify Network.';
+            } else if (jqXHR.status == 404) {
+                reason = 'Requested page not found. [404]';
+            } else if (jqXHR.status == 500) {
+                reason = 'Internal Server Error [500].';
+            } else if (exception === 'parsererror') {
+                reason = 'Requested JSON parse failed.';
+            } else if (exception === 'timeout') {
+                reason = 'Time out error.';
+            } else if (exception === 'abort') {
+                reason = 'Ajax request aborted.';
+            } else {
+                reason = 'Uncaught Error.\n' + jqXHR.responseText;
+            }
+
+            this.errorBoxShow('Гавнище', 'Ошибшка связи с сервером: ' + reason);
+            var retry = function () {
+                this.eventReceiver();
+            }
+            setTimeout(retry.bind(this), 3000);
         }
 
         asyncAjaxReq('get_events',
@@ -142,6 +179,28 @@ class Ui {
             menuDiv.className = 'menu_item_active';
             moduleDiv.style.display = 'block';
         }
+    }
+
+    errorBoxShow(header, msg, timeout = 0) {
+        var tpl = this.teamplates.openTpl('message_box');
+        tpl.assign(NaN, {'header': header,
+                         'msg': msg});
+        this.errorBoxDiv.innerHTML = tpl.result();
+        this.errorBoxDiv.style.display = 'block';
+        this.hidingPageDiv.style.display = 'block';
+        if (!timeout)
+            return;
+
+        var autohide = function () {
+            this.errorBoxHide();
+        }
+        setTimeout(autohide.bind(this), timeout);
+    }
+
+    errorBoxHide() {
+        console.log("call errorBoxHide")
+        this.errorBoxDiv.style.display = 'none';
+        this.hidingPageDiv.style.display = 'none';
     }
 }
 
