@@ -11,16 +11,20 @@ class TaskStopException(Exception):
 
 class Task():
     listTasks = []
-    _state = "stopped"
-    _removing = False
-    _tid = None
-    cb = None
+    listTasksLock = threading.Lock()
+
     log = Syslog("task")
     lastId = 0
-    tasksLock = threading.Lock()
+
+    listAsyncFunctions = {}
+    listAsyncLock = threading.Lock()
 
     def __init__(s, name, exitCb = None, autoremove = False):
         s._name = name
+        s.cb = None
+        s._state = "stopped"
+        s._tid = None
+        s._removing = False
         s._msgQueue = []
         s.exitCb = exitCb
         s.autoremove = autoremove
@@ -38,7 +42,7 @@ class Task():
             s._id = Task.lastId
             s._alive = False
 
-        with Task.tasksLock:
+        with Task.listTasksLock:
             s.listTasks.append(s)
 
 
@@ -117,13 +121,16 @@ class Task():
             #s.telegram.send("stopped by exception: %s" % trace) TODO!!!!
 
         if s.exitCb:
-            s.exitCb()
+            try:
+                s.exitCb()
+            except TaskStopException:
+                pass
 
         s.setState("stopped")
         if s.isRemoving() or s.autoremove:
             s.setState("removed")
             s.log.info("removed by flag")
-            with Task.tasksLock:
+            with Task.listTasksLock:
                 Task.listTasks.remove(s)
 
 
@@ -148,14 +155,13 @@ class Task():
 
     def remove(s):
         if s.state() == "stopped":
-            with Task.tasksLock:
+            with Task.listTasksLock:
                 Task.listTasks.remove(s)
             s.setState("removed")
             s.log.info("removed immediately")
             return
 
         s.log.info("removing..")
-        print("removing %s.." % s.name())
         s.stop()
         with s._lock:
             s._removing = True
@@ -198,13 +204,13 @@ class Task():
     def doObserveTasks():
         ot = Task.observeTask
         while 1:
-            with Task.tasksLock:
+            with Task.listTasksLock:
                 for t in Task.listTasks:
                     if t.state() == "running":
                         t.checkForAlive()
 
             Task.sleep(10000)
-            with Task.tasksLock:
+            with Task.listTasksLock:
                 for t in Task.listTasks:
                     if t.state() != "running":
                         continue
@@ -225,7 +231,7 @@ class Task():
 
     @staticmethod
     def taskById(id):
-        with Task.tasksLock:
+        with Task.listTasksLock:
             for t in Task.listTasks:
                 if t.id() == id:
                     return t
@@ -234,7 +240,7 @@ class Task():
 
     @staticmethod
     def taskByTid(tid):
-        with Task.tasksLock:
+        with Task.listTasksLock:
             for t in Task.listTasks:
                 if t.tid() == tid:
                     return t
@@ -243,7 +249,7 @@ class Task():
 
     @staticmethod
     def taskByName(name):
-        with Task.tasksLock:
+        with Task.listTasksLock:
             for t in Task.listTasks:
                 if t.name() == name:
                     return t
@@ -275,6 +281,31 @@ class Task():
                 break
 
 
+    @staticmethod
+    def asyncRunSingle(name, fn, exitCb = None):
+        with Task.listAsyncLock:
+            list = Task.listAsyncFunctions
+
+        if name in list:
+            with Task.listAsyncLock:
+                task = Task.listAsyncFunctions[name]
+            task.stop()
+            task.remove()
+            with Task.listAsyncLock:
+                Task.listAsyncFunctions.pop(name)
+
+        task = Task("Async_%s" % name, exitCb)
+        def do():
+            fn()
+            task.remove()
+        task.setCb(do)
+        task.start()
+        with Task.listAsyncLock:
+            Task.listAsyncFunctions[name] = task
+        return task
+
+
+
     def __str__(s):
         str = "task %d:%s/%s" % (s._id, s._name, s.state())
         if s._removing:
@@ -300,7 +331,7 @@ class Task():
 
     @staticmethod
     def printList():
-        with Task.tasksLock:
+        with Task.listTasksLock:
             for tsk in Task.listTasks:
                 print("%s" % tsk)
 
