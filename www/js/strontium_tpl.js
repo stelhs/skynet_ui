@@ -1,8 +1,9 @@
 class StrontiumTpl {
-    constructor() {
+    constructor(defMarks = {}) {
         this.srcContent = '';
         this.resultContent = '';
         this.open = open;
+        this.defMarks = defMarks;
     }
 
     openTpl(srcContent) {
@@ -20,10 +21,14 @@ class StrontiumTpl {
         }
     }
 
-    assign(blockName, data) {
+    assign(blockName = NaN, data = {}) {
         var reg = new RegExp();
         var matches;
         var content;
+
+        var marks = {...this.defMarks};
+        for (var i in data)
+            marks[i] = data[i];
 
         if (blockName) {
             reg.compile("<!--[ ]+START[ ]+BLOCK[ ]+:[ ]+" + blockName + "[ ]+-->([\\s\\S]*)<!--[ ]+END[ ]+BLOCK[ ]+:[ ]+" + blockName + "[ ]+-->");
@@ -39,9 +44,10 @@ class StrontiumTpl {
             this.resultContent = this.resultContent.replace(reg, '');
         }
 
-        if (data) {
-            for(var mark in data)
-                content = content.replaceAll('{' + mark + '}', data[mark]);
+        if (marks) {
+            for(var mark in marks) {
+                content = content.replaceAll('{' + mark + '}', marks[mark]);
+            }
         }
 
         if (blockName) {

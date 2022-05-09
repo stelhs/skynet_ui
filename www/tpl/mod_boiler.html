@@ -13,35 +13,43 @@
                 <table style="margin-left: 20px">
                     <tr>
                         <td style="width: 200px">Состояние:</td>
-                        <td>Ожидание</td>
+                        <td id="bolier_state" style="padding: 5px">-</td>
                     </tr>
                     <tr>
                         <td>Питание:</td>
-                        <td><div class="led-green-on"></div></td>
-                    </tr>
-                    <tr>
-                        <td>Топлиный насос:</td>
-                        <td><div class="led-red-on"></div></td>
-                    </tr>
-                    <tr>
-                        <td>Зажигание:</td>
-                        <td><div class="led-red-off"></div></td>
+                        <td><div id="led_power" class="led-undefined"></div></td>
                     </tr>
                     <tr>
                         <td>Воздух:</td>
-                        <td><div class="led-red-on"></div></td>
+                        <td><div id="led_air_fun" class="led-undefined"></div></td>
+                    </tr>
+                    <tr>
+                        <td>Топлиный насос:</td>
+                        <td><div id="led_fuel_pump" class="led-undefined"></div></td>
+                    </tr>
+                    <tr>
+                        <td>Зажигание:</td>
+                        <td><div id="led_ignition" class="led-undefined"></div></td>
                     </tr>
                     <tr>
                         <td>Водяной насос:</td>
-                        <td><div class="led-red-on"></div></td>
+                        <td><div id="led_water_pump" class="led-undefined"></div></td>
+                    </tr>
+                    <tr>
+                        <td>Пламя:</td>
+                        <td><div id="led_flame" class="led-undefined"></div></td>
                     </tr>
                     <tr>
                         <td>Калорифер:</td>
-                        <td><div class="led-red-on"></div></td>
+                        <td><div id="led_heater" class="led-undefined"></div></td>
+                    </tr>
+                    <tr>
+                        <td style="margin: 10px">Нет давления:</td>
+                        <td><div id="led_no_pressure" class="led-undefined"></div></td>
                     </tr>
                     <tr>
                         <td style="margin: 10px">Перегрев:</td>
-                        <td><div class="led-red-off"></div></td>
+                        <td><div id="led_overheat" class="led-undefined"></div></td>
                     </tr>
                 </table>
 
@@ -102,7 +110,7 @@
                    vertical-align: top">
             <div class="seven_seg_item">
                 Счётчик запусков за сутки<br>
-                <div id="ss_ignition_counter" class="seven_seg_2"></div>
+                <div id="ss_ignition_counter" class="seven_seg_3"></div>
             </div>
 
             <div class="seven_seg_item">
@@ -122,79 +130,4 @@
         </td>
     </tr>
 </table>
-
-<script>
-    $("#ss_target_t").sevenSeg({
-        digits:3,
-        value: 17.5,
-        colorOff: "#003500",
-        colorOn: "lime",
-        slant: 10
-    });
-
-    $("#ss_room_t").sevenSeg({
-        digits:3,
-        value: 18.3,
-        colorOff: "#003500",
-        colorOn: "lime",
-        slant: 10
-    });
-
-    $("#ss_boiler_box_t").sevenSeg({
-        digits:3,
-        value: 19.7,
-        colorOff: "#400000",
-        colorOn: "red",
-        slant: 10
-    });
-
-    $("#ss_boiler_t").sevenSeg({
-        digits:3,
-        value: 48.7,
-        colorOff: "#400000",
-        colorOn: "red",
-        slant: 10
-    });
-
-    $("#ss_return_t").sevenSeg({
-        digits:3,
-        value: 27.1,
-        colorOff: "#400000",
-        colorOn: "red",
-        slant: 10
-    });
-
-    $("#ss_ignition_counter").sevenSeg({
-        digits:2,
-        value: " 1",
-        colorOff: "#400000",
-        colorOn: "orange",
-        slant: 10
-    });
-
-    $("#ss_fuel_consumption").sevenSeg({
-        digits:3,
-        value: "5.7",
-        colorOff: "#400000",
-        colorOn: "orange",
-        slant: 10
-    });
-
-    $("#ss_fuel_consumption_month").sevenSeg({
-        digits:4,
-        value: "72.8",
-        colorOff: "#400000",
-        colorOn: "orange",
-        slant: 10
-    });
-
-    $("#ss_fuel_consumption_year").sevenSeg({
-        digits:4,
-        value: "712",
-        colorOff: "#400000",
-        colorOn: "orange",
-        slant: 10
-    });
-
-</script>
 

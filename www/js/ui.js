@@ -35,39 +35,62 @@ class Teamplates {
         this.tplList = NaN;
         var d = syncAjaxReq('get_teamplates');
         eval('this.tplList = ' + d);
+        this.defMarks = {'img_dir': '/img/'};
     }
 
     byName(name) {
-        return this.tplList[name];
+        if (name in this.tplList)
+            return this.tplList[name];
+        return NaN;
     }
 
     openTpl(name) {
-        var tpl = new StrontiumTpl();
+        var tpl = new StrontiumTpl(this.defMarks);
         var c = this.byName(name);
+        if (!c)
+            return NaN;
         tpl.openTpl(c);
         return tpl;
     }
 }
 
 
-class Module {
-    constructor(name, title) {
-        this.name = name;
-        this.title = title;
-    }
-}
-
 class Ui {
-    constructor() {
+    constructor(modules) {
         this.teamplates = new Teamplates();
-        this.noSleep = new NoSleep('no_sleep_video');
-        this.modules = [];
+        this.logBox = new LogBox(this.teamplates);
+        this.modules = [new Boiler(this.teamplates)];
 
+        this.noSleep = new NoSleep('no_sleep_video');
         this.errorBoxDiv = $$('errorBox');
         this.hidingPageDiv = $$('hidingPage');
         this.noSleep.run();
         this.register();
         this.eventReceiver();
+
+
+        var menuTpl = this.teamplates.openTpl('menu')
+        var modulesTpl = this.teamplates.openTpl('modules')
+        for (var i in this.modules) {
+            var mod = this.modules[i];
+
+            modulesTpl.assign('module',
+                          {'name': mod.name(),
+                           'module_content': mod.html()});
+
+            menuTpl.assign('menu_item',
+                       {'name': mod.name(),
+                        'title': mod.title()});
+        }
+        $$('menu_panel').innerHTML = menuTpl.result();
+        $$('modules').innerHTML = modulesTpl.result();
+
+        for (var i in this.modules) {
+            var mod = this.modules[i];
+            mod.init()
+        }
+
+        this.switchModule('boiler');
     }
 
     register() {
@@ -76,13 +99,27 @@ class Ui {
         this.subscriberId = resp.subscriber_id;
     }
 
+    moduleByName(name) {
+        for (var i in this.modules) {
+            var mod = this.modules[i];
+            if (mod.name() == name)
+                return mod;
+        }
+        return NaN;
+    }
+
     eventHandler(sender, type, data) {
-//        alert(data.room_t);
+        var mod = this.moduleByName(sender)
+        if (!mod) {
+            this.logErr("eventHandler(): incorrect sender")
+            return;
+        }
+
+        mod.eventHandler(type, data);
     }
 
     eventReceiver() {
         var success = function(responceText) {
-            console.log("call success")
             this.errorBoxHide();
             var resp = JSON.parse(responceText)
             if (resp.status == 'error') {
@@ -107,7 +144,7 @@ class Ui {
                 for (var i in events) {
                     event = events[i];
                     this.eventHandler(event.sender,
-                                 event.event_type,
+                                 event.type,
                                  event.data);
                 }
             }
@@ -146,35 +183,15 @@ class Ui {
                       success.bind(this), error.bind(this))
     }
 
-    registerModule(list) {
-        var menuTpl = this.teamplates.openTpl('menu')
-        var modTpl = this.teamplates.openTpl('modules')
-        for (var name in list) {
-            var title = list[name];
-            var mod = new Module(name, title);
-            this.modules.push(mod);
-
-            modTpl.assign('module',
-                          {'name': name,
-                           'module_content': this.teamplates.byName('mod_' + name)});
-
-            menuTpl.assign('menu_item',
-                       {'name': name,
-                        'title': title});
-        }
-        $$('menu_panel').innerHTML = menuTpl.result();
-        $$('modules').innerHTML = modTpl.result();
-    }
-
-    swithToModule(name) {
+    switchModule(name) {
         this.noSleep.run()
         for (var i in this.modules) {
             var mod = this.modules[i];
-            var menuDiv = $$('menu_item_' + mod.name);
-            var moduleDiv = $$('module_' + mod.name);
+            var menuDiv = $$('menu_item_' + mod.name());
+            var moduleDiv = $$('module_' + mod.name());
             menuDiv.className = 'menu_item';
             moduleDiv.style.display = 'none';
-            if (mod.name != name)
+            if (mod.name() != name)
                 continue;
             menuDiv.className = 'menu_item_active';
             moduleDiv.style.display = 'block';
@@ -202,16 +219,66 @@ class Ui {
         this.errorBoxDiv.style.display = 'none';
         this.hidingPageDiv.style.display = 'none';
     }
+
+    logErr(msg) {
+        this.logBox.insert('err', msg);
+        this.logBox.redraw();
+    }
+
+    logInfo(msg) {
+        this.logBox.insert('info', msg);
+        this.logBox.redraw();
+    }
+
 }
 
+class LogBox {
+    constructor(teamplates) {
+        this.teamplates = teamplates
+        this.logs = [];
+        this.div = $$('log_box');
+    }
 
+    insert(type, message) {
+        var now = new Date();
+        this.logs.unshift([now, type, message]);
+        if (this.logs.length > 30)
+            this.logs.pop();
+    }
+
+    redraw() {
+        var tpl = this.teamplates.openTpl('log_box')
+
+        for (var i in this.logs) {
+            var row = this.logs[i];
+            var date = row[0];
+            var type = row[1];
+            var msg = row[2];
+
+            var t = {'day': date.getDate().pad(),
+                     'month': (date.getMonth() + 1).pad(),
+                     'hour': date.getHours().pad(),
+                     'min': date.getMinutes().pad(),
+                     'sec': date.getSeconds().pad()};
+
+            tpl.assign('row', t);
+            if (type == 'err')
+                tpl.assign('row_error', {'message': msg});
+            else
+                tpl.assign('row_info', {'message': msg});
+        }
+
+        this.div.innerHTML = tpl.result();
+    }
+}
 
 function init() {
-    ui = new Ui();
+    Number.prototype.pad = function(size) {
+        var s = String(this);
+        while (s.length < (size || 2)) {s = "0" + s;}
+        return s;
+    }
 
-    var modules = {'boiler': 'Котёл',
-                   'guard': 'Охрана',
-                   'modules_io': 'Модули IO'};
-    ui.registerModule(modules)
+    ui = new Ui();
 }
 

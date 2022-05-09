@@ -146,7 +146,7 @@ a.button_green:active {
         0 1px 1px rgba(255,255,255,.1);
 }
 
-.led-green-on {
+.led-green {
     display: inline-block;
     vertical-align: middle;
     margin: 5px 10px 5px 10px;
@@ -157,17 +157,7 @@ a.button_green:active {
     box-shadow: 0 0 15px #fff, 0 0 15px #fff, 0 0 15px #fff;
 }
 
-.led-green-off {
-    display: inline-block;
-    vertical-align: middle;
-    margin: 5px 10px 5px 10px;
-    width: 16px;
-    height: 16px;
-    background-color: #141;
-    border-radius: 50%;
-}
-
-.led-red-on {
+.led-red {
     display: inline-block;
     vertical-align: middle;
     margin: 5px 10px 5px 10px;
@@ -178,7 +168,7 @@ a.button_green:active {
     box-shadow: 0 0 15px #fff, 0 0 15px #fff, 0 0 15px #fff;
 }
 
-.led-red-off {
+.led-off {
     display: inline-block;
     vertical-align: middle;
     margin: 5px 10px 5px 10px;
@@ -186,4 +176,13 @@ a.button_green:active {
     height: 16px;
     background-color: #422;
     border-radius: 50%;
+}
+
+.led-undefined {
+    background-image: url(/img/cross.png);
+    display: inline-block;
+    vertical-align: middle;
+    margin: 3px 10px 3px 10px;
+    width: 20px;
+    height: 20px;
 }

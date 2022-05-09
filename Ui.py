@@ -35,7 +35,7 @@ class Ui():
                                'reason': "argument 'method' is absent"})
 
         method = args['method']
-        return s.uiHandler.do(method, args, body)
+        return s.uiHandler.do(method, args, body, conn)
 
 
     def httpSendEventHandler(s, args, body, attrs, conn):
@@ -117,8 +117,9 @@ class UiEventManager():
         for subscriber in s.subscribers:
             subscriber.pushEvent(ev)
 
-        for task in s.awaitingTaskList:
-            task.sendMessage('event')
+        with s.lock:
+            for task in s.awaitingTaskList:
+                task.sendMessage('event')
 
 
     def events(s, task, subsriberId):
@@ -170,7 +171,7 @@ class HttpUiHandler():
         s.eventManager = eventManager
 
 
-    def do(s, method, args, body):
+    def do(s, method, args, body, conn):
         list = {"get_teamplates": s.reqTeamplates,
                 "get_events": s.reqEvents,
                 "subscribe": s.reqSubsribe};
@@ -179,10 +180,10 @@ class HttpUiHandler():
             return json.dumps({'status': 'error',
                                'error_code': '3',
                                'reason': ("method '%s' is not registred" % method)})
-        return list[method](args)
+        return list[method](args, conn)
 
 
-    def reqTeamplates(s, args):
+    def reqTeamplates(s, args, conn):
         tplDir = "%s/tpl" % s.httpServer.wwwDir()
         files = os.listdir(tplDir)
         list = {}
@@ -194,20 +195,22 @@ class HttpUiHandler():
         return json.dumps(list)
 
 
-    def reqSubsribe(s, args):
+    def reqSubsribe(s, args, conn):
         subscriber = s.eventManager.subscribe()
         return json.dumps({'status': 'ok',
                            'subscriber_id': subscriber.id})
 
 
-    def reqEvents(s, args):
+    def reqEvents(s, args, conn):
         if not 'subscriber_id' in args:
             return json.dumps({'status': 'error',
                                'error_code': '1',
                                'reason': "'subscriber_id' is absent"})
 
         subscriberId = args['subscriber_id']
-        events = s.eventManager.events(s.httpServer.task(), subscriberId)
+        events = s.eventManager.events(conn.task(), subscriberId)
+#        print('subscriberId = %s' % subscriberId)
+ #       print(events)
         if events == None:
             return json.dumps({'status': 'error',
                                'error_code': '2',
