@@ -1,0 +1,80 @@
+
+
+.io_table {
+    width: 100%;
+    margin-bottom: 20px;
+    border: 1px solid #dddddd;
+    border-collapse: collapse;
+}
+
+.io_table th {
+    font-weight: bold;
+    padding: 5px;
+    background: #335577;
+    border: 1px solid #dddddd;
+}
+
+.io_table td {
+    border: 1px solid #dddddd;
+    padding: 5px;
+}
+
+
+a.button_with_led {
+    line-height: 40px;
+    padding-left: 10px;
+    padding-right: 10px;
+    margin-left: 10px;
+    margin-right: 10px;
+    display: inline-block;
+    font-size: 20px;
+    font-weight: 700;
+    color: rgb(209,209,217);
+    text-decoration: none;
+    text-shadow: 0 -1px 2px rgba(0,0,0,.2);
+    border-radius: 35px;
+    background: linear-gradient(#6AC, #39b);
+    box-shadow:
+        0 1px rgba(255,255,255,.2) inset,
+        0 3px 5px rgba(0,1,6,.5),
+        0 0 1px 1px rgba(0,1,6,.2);
+    user-select: none;
+}
+
+a.button_with_led:active {
+    top: 1px;
+    background: linear-gradient(#4080AA, #202020);
+    box-shadow:
+        0 0 1px rgba(0,0,0,.5) inset,
+        0 2px 3px rgba(0,0,0,.5) inset,
+        0 1px 1px rgba(255,255,255,.1);
+}
+
+a.button_without_led {
+    height: 45px;
+    width: 60px;
+    margin-left: 10px;
+    margin-right: 10px;
+    display: inline-block;
+    font-size: 20px;
+    font-weight: 700;
+    color: rgb(209,209,217);
+    text-decoration: none;
+    text-shadow: 0 -1px 2px rgba(0,0,0,.2);
+    border-radius: 35px;
+    background: linear-gradient(#6AC, #39b);
+    box-shadow:
+        0 1px rgba(255,255,255,.2) inset,
+        0 3px 5px rgba(0,1,6,.5),
+        0 0 1px 1px rgba(0,1,6,.2);
+    user-select: none;
+}
+
+a.button_without_led:active {
+    top: 1px;
+    background: linear-gradient(#4080AA, #202020);
+    box-shadow:
+        0 0 1px rgba(0,0,0,.5) inset,
+        0 2px 3px rgba(0,0,0,.5) inset,
+        0 1px 1px rgba(255,255,255,.1);
+}

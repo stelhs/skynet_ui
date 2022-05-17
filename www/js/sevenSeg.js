@@ -122,6 +122,11 @@ _setOption: function(key, value){
         case "value":
             this.displayValue(value);
             break;
+
+        case "colorOn":
+            console.log("set option colorOn");
+            self.options.colorOn = value;
+            break;
     }
 },
 

@@ -1,26 +1,23 @@
 
-class Boiler {
-    constructor(teamplates) {
-        this.teamplates = teamplates;
+class Boiler extends ModuleBase {
+    constructor(ui) {
+        super(ui, 'boiler');
         this.watcherTimeoutHandler = NaN;
-    }
-
-    name() {
-        return 'boiler';
+        this.pagesNumber = 2;
     }
 
     title() {
         return 'Котёл';
     }
 
-    html() {
-        var modTpl = this.teamplates.openTpl('mod_boiler');
-        modTpl.assign();
-        return modTpl.result();
+    description() {
+        return 'Панель управления котлом';
     }
 
     init() {
+        super.init();
         this.boilerStateDiv = $$('bolier_state');
+        this.fuelConsumptionTableDiv = $$('boiler_fuel_consumption_table');
 
         this.leds = {'led_power': $$('led_power'),
                      'led_air_fun': $$('led_air_fun'),
@@ -43,55 +40,68 @@ class Boiler {
                      'ss_fuel_consumption_month': [$("#ss_fuel_consumption_month"), 4, "orange"],
                      'ss_fuel_consumption_year': [$("#ss_fuel_consumption_year"), 4, "orange"]};
 
-        this.reset();
+
+        this.uiReset();
 
         for (var name in this.sevenSegs)
-            this.setSevenSegVal(name);
+            this.showSevenSegVal(name, "");
 
         this.restartEventTimeoutWatcher();
     }
 
-    setBoilerState(state) {
+
+    html(pageNum) {
+        var tpl = this.ui.teamplates.openTpl('mod_' + this.name() + '_' + pageNum);
+        tpl.assign();
+        return tpl.result();
+    }
+
+    onPageChanged(pageNum) {
+        if (pageNum == 2)
+            this.requestBoilerFuelConsumption()
+    }
+
+    showBoilerState(state) {
         this.boilerStateDiv.innerHTML = state;
     }
 
-    setSevenSegVal(name, val) {
+    showSevenSegVal(name, val) {
         var parts = this.sevenSegs[name];
         var div = parts[0];
         var digits = parts[1];
         var color = parts[2];
 
-        div.sevenSeg({
+        div.sevenSegArray({
             value: val,
             digits:digits,
-            colorOff: "#003500",
-            colorOn: color,
-            slant: 10
+            segmentOptions: {
+                colorOff: "#003500",
+                colorOn: color,
+                slant: 10
+            }
         });
+
     }
 
 
-    reset() {
-        this.setBoilerState('-');
+    uiReset() {
+        this.showBoilerState('-');
 
         for (var ledName in this.leds)
             this.ledSet(ledName, 'undefined');
 
         for (var name in this.sevenSegs)
-            this.setSevenSegVal(name, "XXXXX");
+            this.showSevenSegVal(name, "XXXXX");
+
+        this.fuelConsumptionTableDiv.innerHTML = '';
     }
 
     logErr(msg) {
-        ui.logErr("Boiler: " + msg)
+        this.ui.logErr("Boiler: " + msg)
     }
 
     logInfo(msg) {
-        ui.logInfo("Boiler: " + msg)
-    }
-
-    eventTimeoutHandler() {
-        this.reset();
-        this.logErr('UI does not receive a signal from boiler more then 3 second');
+        this.ui.logInfo("Boiler: " + msg)
     }
 
     restartEventTimeoutWatcher() {
@@ -99,7 +109,12 @@ class Boiler {
             clearTimeout(this.watcherTimeoutHandler);
             this.watcherTimeoutHandler = NaN;
         }
-        this.watcherTimeoutHandler = setTimeout(this.eventTimeoutHandler.bind(this), 3000);
+
+        var handler = function() {
+            this.uiReset();
+            this.logErr('UI does not receive a signal from boiler more then 3 second');
+        }
+        this.watcherTimeoutHandler = setTimeout(handler.bind(this), 3000);
     }
 
     ledByName(name) {
@@ -112,14 +127,14 @@ class Boiler {
 
     ledSet(ledName, mode) {
         var led = this.ledByName(ledName);
-        led.className = 'led-' + mode;
+        led.className = 'led_big-' + mode;
     }
 
     eventHandler(type, data) {
         switch (type) {
         case 'status':
             this.restartEventTimeoutWatcher();
-            this.update_status(data);
+            this.updateStatus(data);
             return;
 
         case 'error':
@@ -129,6 +144,11 @@ class Boiler {
         case 'info':
             this.logInfo(data)
             return
+
+        case 'boilerFuelConsumption':
+            this.updateBoilerFuelConsumption(data);
+            return
+
 
         default:
             this.logErr("Incorrect event type: " + type)
@@ -147,18 +167,17 @@ class Boiler {
 
     actualizeSevenSeg(segName, data, field) {
         if (field in data)
-            this.setSevenSegVal(segName, data[field]);
+            this.showSevenSegVal(segName, data[field].toString());
     }
 
-
-    update_status(data) {
+    updateStatus(data) {
         if (typeof data !== 'object') {
             this.logErr("Incorrect event status")
             return;
         }
 
         if ('state' in data)
-            this.setBoilerState(data['state']);
+            this.showBoilerState(data['state']);
 
         this.actualizeLed('led_power', data, 'power', 'True', 'green');
         this.actualizeLed('led_air_fun', data, 'air_fun', 'True', 'green');
@@ -181,6 +200,127 @@ class Boiler {
         this.actualizeSevenSeg('ss_fuel_consumption_year', data, 'fuel_consumption_year');
     }
 
+    boilerRequest(method, args) {
+        var success = function(responceText) {
+            var resp = JSON.parse(responceText)
+
+            if (resp.status == 'error') {
+                this.logErr("boiler method '" + method + "'" +
+                               "return error: " + resp.reason)
+                return;
+            }
+            this.logInfo("to boiler '" + method + "' success finished")
+        }
+
+        var error = function(reason, errCode) {
+            this.logErr('Can`t send request "' + method + '" to boiler: ' + reason)
+        }
+        asyncAjaxReq('boiler/' + method, args,
+                     success.bind(this), error.bind(this))
+    }
+
+    boilerSetTarget_t(t) {
+        this.ui.logInfo('Request to set target temperature ' + t);
+        this.boilerRequest('set_target_t', {'t': t.toString()})
+    }
+
+    onClickSetTarget_t() {
+        var cb = function(results) {
+            var t = results['t'];
+            this.boilerSetTarget_t(t);
+        }
+
+        var numberBox = new NumberBox(this.ui, cb.bind(this),
+                                      'Установить температуру',
+                                      [['t', 't°', 2, 30, 'lime']]);
+        this.ui.showDialogBox(numberBox)
+    }
+
+    boilerEnableHeater() {
+        this.ui.logInfo('Request to enable heater');
+        this.boilerRequest('heater_enable')
+    }
+
+    boilerDisableHeater() {
+        this.ui.logInfo('Request to disable heater');
+        this.boilerRequest('heater_disable')
+    }
+
+    updateBoilerFuelConsumption(data) {
+        var div = this.fuelConsumptionTableDiv
+        var months = ['Январь',
+                      'Февраль',
+                      'Март',
+                      'Апрель',
+                      'Май',
+                      'Июнь',
+                      'Июль',
+                      'Август',
+                      'Сентябрь',
+                      'Октябрь',
+                      'Ноябрь',
+                      'Декабрь'];
+
+        if (typeof data !== 'object') {
+            this.logErr("Incorrect event boilerFuelConsumption")
+            return;
+        }
+
+        var tpl = this.ui.teamplates.openTpl('boiler_consumption');
+
+        if (!data.length) {
+            tpl.assign('no_data');
+            div.innerHTML = tpl.result();
+            this.logErr('Received list of fuel consumption is empty');
+            return;
+        }
+
+        for (var i in data) {
+            var row = data[i];
+
+            if (!('year' in row)) {
+                this.logErr('Incorrect boiler fuel consumption event: field "year" is absent');
+                return;
+            }
+
+            if (!('total' in row)) {
+                this.logErr('Incorrect boiler fuel consumption event: field "total" is absent');
+                return;
+            }
+
+            if (!('months' in row)) {
+                this.logErr('Incorrect boiler fuel consumption event: field "months" is absent');
+                return;
+            }
+
+            tpl.assign('year', {'year': row['year'],
+                                'total': row['total']});
+
+            for (var i in row['months']) {
+                var subrow = row['months'][i];
+
+                if (!('month' in subrow)) {
+                    this.logErr('Incorrect boiler fuel consumption event: sub field "month" is absent in months list');
+                    return;
+                }
+
+                if (!('liters' in subrow)) {
+                    this.logErr('Incorrect boiler fuel consumption event: sub field "liters" is absent in months list');
+                    return;
+                }
+
+                tpl.assign('month',
+                           {'month': months[subrow['month'] - 1],
+                            'liters': subrow['liters']});
+            }
+        }
+        div.innerHTML = tpl.result();
+    }
+
+    requestBoilerFuelConsumption() {
+        this.logInfo('Request to sr90 to obtain fuel consumption report')
+        this.sr90Request('boiler/request_fuel_compsumption_stat')
+    }
 }
 
 

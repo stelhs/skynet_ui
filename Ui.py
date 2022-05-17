@@ -3,6 +3,8 @@ from Task import *
 from Syslog import *
 from HttpServer import *
 from Settings import *
+from BoilerHandlers import *
+from sr90Handlers import *
 import json
 import os, re
 import requests
@@ -18,27 +20,18 @@ class Ui():
         s.log = Syslog("ui")
         s.conf = Settings()
 
-        s.httpServer = HttpServer(s.conf.serverHost,
-                                  s.conf.serverPort,
-                                  s.conf.serverDir)
-        s.httpServer.setReqCb("GET", "/ui", s.httpUiHandler)
-        s.httpServer.setReqCb("POST", "/send_event", s.httpSendEventHandler)
-
         s.eventManager = UiEventManager()
-        s.uiHandler = HttpUiHandler(s.httpServer, s.eventManager)
+
+        s.httpServer = HttpServer(s.conf.uiServerHost,
+                                  s.conf.uiServerPort,
+                                  s.conf.uiServerDir)
+        s.httpServer.setReqCb("POST", "/send_event", s.sendEventHandler)
+        s.uiHandlers = UiHandlers(s)
+        s.boilerHandlers = BoilerHandlers(s)
+        s.sr90Handlers = sr90Handlers(s)
 
 
-    def httpUiHandler(s, args, body, attrs, conn):
-        if not args or (not 'method' in args):
-            return json.dumps({'status': 'error',
-                               'error_code': '8',
-                               'reason': "argument 'method' is absent"})
-
-        method = args['method']
-        return s.uiHandler.do(method, args, body, conn)
-
-
-    def httpSendEventHandler(s, args, body, attrs, conn):
+    def sendEventHandler(s, args, body, attrs, conn):
         try:
             dt = json.loads(body)
         except:
@@ -52,18 +45,18 @@ class Ui():
                                'reason': "'type' field not specified in JSON"})
         evType = dt['type']
 
-        if not 'sender' in dt:
+        if not 'subsytem' in dt:
             return json.dumps({'status': 'error',
                                'error_code': '5',
-                               'reason': "'sender' field not specified in JSON"})
-        sender = dt['sender']
+                               'reason': "'subsytem' field not specified in JSON"})
+        subsytem = dt['subsytem']
 
         if not 'data' in dt:
             return json.dumps({'status': 'error',
                                'error_code': '4',
                                'reason': "'data' field not specified in JSON"})
         data = dt['data']
-        s.eventManager.send(sender, evType, data)
+        s.eventManager.send(subsytem, evType, data)
         return json.dumps({'status': 'ok'})
 
 
@@ -110,10 +103,10 @@ class UiEventManager():
         s.subscribers = []
 
 
-    def send(s, sender, type, evData):
+    def send(s, subsytem, type, evData):
         s.removeOldSubscribers()
 
-        ev = {'sender': sender, 'type': type, 'data': evData}
+        ev = {'subsytem': subsytem, 'type': type, 'data': evData}
         for subscriber in s.subscribers:
             subscriber.pushEvent(ev)
 
@@ -165,26 +158,16 @@ class UiEventManager():
 
 
 
-class HttpUiHandler():
-    def __init__(s, httpServer, eventManager):
-        s.httpServer = httpServer
-        s.eventManager = eventManager
+class UiHandlers():
+    def __init__(s, ui):
+        ui.httpServer.setReqCb("GET", "/ui/get_teamplates", s.teamplates)
+        ui.httpServer.setReqCb("GET", "/ui/get_events", s.events)
+        ui.httpServer.setReqCb("GET", "/ui/subscribe", s.subscribe)
+        s.ui = ui
 
 
-    def do(s, method, args, body, conn):
-        list = {"get_teamplates": s.reqTeamplates,
-                "get_events": s.reqEvents,
-                "subscribe": s.reqSubsribe};
-
-        if not method in list:
-            return json.dumps({'status': 'error',
-                               'error_code': '3',
-                               'reason': ("method '%s' is not registred" % method)})
-        return list[method](args, conn)
-
-
-    def reqTeamplates(s, args, conn):
-        tplDir = "%s/tpl" % s.httpServer.wwwDir()
+    def teamplates(s, args, body, attrs, conn):
+        tplDir = "%s/tpl" % s.ui.httpServer.wwwDir()
         files = os.listdir(tplDir)
         list = {}
         for file in files:
@@ -195,20 +178,20 @@ class HttpUiHandler():
         return json.dumps(list)
 
 
-    def reqSubsribe(s, args, conn):
-        subscriber = s.eventManager.subscribe()
+    def subscribe(s, args, body, attrs, conn):
+        subscriber = s.ui.eventManager.subscribe()
         return json.dumps({'status': 'ok',
                            'subscriber_id': subscriber.id})
 
 
-    def reqEvents(s, args, conn):
+    def events(s, args, body, attrs, conn):
         if not 'subscriber_id' in args:
             return json.dumps({'status': 'error',
                                'error_code': '1',
                                'reason': "'subscriber_id' is absent"})
 
         subscriberId = args['subscriber_id']
-        events = s.eventManager.events(conn.task(), subscriberId)
+        events = s.ui.eventManager.events(conn.task(), subscriberId)
 #        print('subscriberId = %s' % subscriberId)
  #       print(events)
         if events == None:
@@ -218,6 +201,7 @@ class HttpUiHandler():
 
         return json.dumps({'status': 'ok',
                            'events': events})
+
 
 
 
